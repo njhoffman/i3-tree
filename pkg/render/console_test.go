@@ -378,3 +378,68 @@ func TestConRendererWithWindowDetails(t *testing.T) {
 	got := writer.String()
 	assert.Equal(t, want, got)
 }
+
+func TestConRendererWithFloatingWindows(t *testing.T) {
+	// Create a tree with floating windows
+	floatingWindow := &i3.Node{
+		ID:   4,
+		Name: "Floating App",
+		Type: i3.NodeType(i3.Con),
+		WindowProperties: i3.WindowProperties{
+			Class: "FloatingApp",
+		},
+	}
+
+	floatingCon := &i3.Node{
+		ID:     3,
+		Type:   "floating_con",
+		Layout: i3.Layout(i3.SplitH),
+		Nodes: []*i3.Node{
+			floatingWindow,
+		},
+	}
+
+	regularWindow := &i3.Node{
+		ID:   5,
+		Name: "Regular Window",
+		Type: i3.NodeType(i3.Con),
+	}
+
+	ws1 := &i3.Node{
+		ID:     2,
+		Name:   "1",
+		Type:   i3.NodeType(i3.WorkspaceNode),
+		Layout: i3.Layout(i3.SplitH),
+		Nodes: []*i3.Node{
+			regularWindow,
+		},
+		FloatingNodes: []*i3.Node{
+			floatingCon,
+		},
+	}
+
+	root := &i3.Node{
+		ID:   0,
+		Name: "root",
+		Type: i3.NodeType(i3.Root),
+		Nodes: []*i3.Node{
+			ws1,
+		},
+	}
+
+	tree := i3.Tree{Root: root}
+
+	// Expected output with [fcon] for floating containers
+	want := "[root] root\n" +
+		"└──[\x1b[36mworkspace\x1b[0m][\x1b[93msplith\x1b[0m] 1\n" +
+		"   ├──[\x1b[34mcon\x1b[0m] Regular Window\n" +
+		"   └──[\x1b[34mfcon\x1b[0m][\x1b[93msplith\x1b[0m]\n" +
+		"      └──[\x1b[34mcon\x1b[0m] (FloatingApp) Floating App\n"
+
+	var writer bytes.Buffer
+	r := render.NewColoredConsole(io.Writer(&writer))
+	r.Render(&tree)
+
+	got := writer.String()
+	assert.Equal(t, want, got)
+}

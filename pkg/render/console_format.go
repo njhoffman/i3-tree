@@ -48,19 +48,28 @@ func (t *console) formatLayout(node *i3.Node, au aurora.Aurora, isFocused bool) 
 	return s
 }
 
-func (t *console) formatType(node *i3.Node, au aurora.Aurora, isFocused bool) string {
+func (t *console) formatType(node *i3.Node, au aurora.Aurora, isFocused bool, isFloating bool) string {
 	if node == nil {
 		return ""
 	}
 
-	formatFn := func(t i3.NodeType, au aurora.Aurora, bold bool) string {
-		s := string(t)
+	formatFn := func(nodeType i3.NodeType, au aurora.Aurora, bold bool, floating bool) string {
+		s := string(nodeType)
+
+		// Replace "con" with "fcon" for floating containers
+		// Also replace "floating_con" with "fcon"
+		if nodeType == "floating_con" || (floating && nodeType == "con") {
+			s = "fcon"
+		}
 
 		var colored string
-		switch t {
+		switch nodeType {
 		case "workspace":
 			colored = au.Cyan(s).String()
 		case "con":
+			colored = au.Blue(s).String()
+		case "floating_con":
+			// floating_con should be colored like con (blue)
 			colored = au.Blue(s).String()
 		case "output":
 			colored = au.Magenta(s).String()
@@ -72,10 +81,13 @@ func (t *console) formatType(node *i3.Node, au aurora.Aurora, isFocused bool) st
 		if bold {
 			// We need to apply bold to the already colored text
 			// Aurora chaining: color first, then bold
-			switch t {
+			switch nodeType {
 			case "workspace":
 				return au.Bold(au.Cyan(s)).String()
 			case "con":
+				return au.Bold(au.Blue(s)).String()
+			case "floating_con":
+				// floating_con should be colored and bolded like con (blue)
 				return au.Bold(au.Blue(s)).String()
 			case "output":
 				return au.Bold(au.Magenta(s)).String()
@@ -87,5 +99,5 @@ func (t *console) formatType(node *i3.Node, au aurora.Aurora, isFocused bool) st
 		return colored
 	}
 
-	return t.wrapBrackets(formatFn(node.Type, au, isFocused), isFocused)
+	return t.wrapBrackets(formatFn(node.Type, au, isFocused, isFloating), isFocused)
 }

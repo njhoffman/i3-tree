@@ -42,7 +42,7 @@ func newConsole(w io.Writer, colors bool) *console {
 func (t *console) Render(tree *i3.Tree) {
 	// Build a set of node IDs that are on the path to the focused node
 	focusedPath := t.buildFocusedPath(tree.Root)
-	t.print(tree.Root, "", "", 0, focusedPath)
+	t.print(tree.Root, "", "", 0, focusedPath, false)
 }
 
 // buildFocusedPath finds the path from root to the focused node
@@ -67,8 +67,17 @@ func (t *console) findFocusedPath(node *i3.Node, path map[i3.NodeID]bool) bool {
 		return true
 	}
 
-	// Check if any child contains the focused node
+	// Check if any child contains the focused node (regular nodes)
 	for _, child := range node.Nodes {
+		if t.findFocusedPath(child, path) {
+			// This node is on the path to the focused node
+			path[node.ID] = true
+			return true
+		}
+	}
+
+	// Check floating nodes too
+	for _, child := range node.FloatingNodes {
 		if t.findFocusedPath(child, path) {
 			// This node is on the path to the focused node
 			path[node.ID] = true
@@ -146,7 +155,7 @@ func (t *console) formatWindowDetails(node *i3.Node) string {
 	return result
 }
 
-func (t *console) print(node *i3.Node, prefix string, marker string, level int, focusedPath map[i3.NodeID]bool) {
+func (t *console) print(node *i3.Node, prefix string, marker string, level int, focusedPath map[i3.NodeID]bool, isFloating bool) {
 	if node == nil {
 		return
 	}
@@ -154,7 +163,7 @@ func (t *console) print(node *i3.Node, prefix string, marker string, level int, 
 	isOnFocusedPath := focusedPath[node.ID]
 	isFocused := node.Focused
 
-	ftype := t.formatType(node, t.au, isFocused)
+	ftype := t.formatType(node, t.au, isFocused, isFloating)
 	flayout := t.formatLayout(node, t.au, isFocused)
 
 	// Make the marker bold if on focused path
@@ -176,12 +185,19 @@ func (t *console) print(node *i3.Node, prefix string, marker string, level int, 
 		"\n",
 	)
 
-	for i, n := range node.Nodes {
+	// Combine regular nodes and floating nodes
+	allNodes := append([]*i3.Node{}, node.Nodes...)
+	allNodes = append(allNodes, node.FloatingNodes...)
+
+	for i, n := range allNodes {
 		newPrefix := prefix
 		newMarker := ""
 
+		// Check if this is a floating node
+		childIsFloating := i >= len(node.Nodes)
+
 		// figure out what's the marker for the next iteration
-		if i == len(node.Nodes)-1 {
+		if i == len(allNodes)-1 {
 			newMarker = "└──" // last node
 		} else {
 			newMarker = "├──" // middle node
@@ -210,6 +226,6 @@ func (t *console) print(node *i3.Node, prefix string, marker string, level int, 
 			}
 		}
 
-		t.print(n, newPrefix, newMarker, level+1, focusedPath)
+		t.print(n, newPrefix, newMarker, level+1, focusedPath, childIsFloating)
 	}
 }
