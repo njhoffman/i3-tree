@@ -89,7 +89,7 @@ func (t *console) findFocusedPath(node *i3.Node, path map[i3.NodeID]bool) bool {
 }
 
 // formatWindowDetails formats additional window information like class, marks, and status icons
-func (t *console) formatWindowDetails(node *i3.Node) string {
+func (t *console) formatWindowDetails(node *i3.Node, isFloating bool) string {
 	if node == nil {
 		return ""
 	}
@@ -130,6 +130,11 @@ func (t *console) formatWindowDetails(node *i3.Node) string {
 	// Fullscreen icon
 	if node.FullscreenMode != 0 {
 		icons += " " + t.au.Bold(t.au.BrightWhite("󰊓")).String()
+	}
+
+	// Floating icon
+	if isFloating || node.Type == "floating_con" {
+		icons += " " + t.au.Bold(t.au.BrightWhite("󰭽")).String()
 	}
 
 	// Sticky icon - Note: i3 doesn't expose sticky directly in the tree
@@ -173,7 +178,7 @@ func (t *console) print(node *i3.Node, prefix string, marker string, level int, 
 	}
 
 	// Format additional window details (class, marks, icons)
-	windowDetails := t.formatWindowDetails(node)
+	windowDetails := t.formatWindowDetails(node, isFloating)
 
 	fmt.Fprint(
 		t.w,

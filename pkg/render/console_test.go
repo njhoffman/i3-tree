@@ -433,7 +433,7 @@ func TestConRendererWithFloatingWindows(t *testing.T) {
 	want := "[root] root\n" +
 		"└──[\x1b[36mworkspace\x1b[0m][\x1b[93msplith\x1b[0m] 1\n" +
 		"   ├──[\x1b[34mcon\x1b[0m] Regular Window\n" +
-		"   └──[\x1b[34mfcon\x1b[0m][\x1b[93msplith\x1b[0m]\n" +
+		"   └──[\x1b[34mfcon\x1b[0m][\x1b[93msplith\x1b[0m] \x1b[1;97m󰭽\x1b[0m\n" +
 		"      └──[\x1b[34mcon\x1b[0m] (FloatingApp) Floating App\n"
 
 	var writer bytes.Buffer
