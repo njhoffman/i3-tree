@@ -40,21 +40,66 @@ func newConsole(w io.Writer, colors bool) *console {
 }
 
 func (t *console) Render(tree *i3.Tree) {
-	t.print(tree.Root, "", "", 0)
+	// Build a set of node IDs that are on the path to the focused node
+	focusedPath := t.buildFocusedPath(tree.Root)
+	t.print(tree.Root, "", "", 0, focusedPath)
 }
 
-func (t *console) print(node *i3.Node, prefix string, marker string, level int) {
+// buildFocusedPath finds the path from root to the focused node
+// Returns a map of node IDs that are on this path
+func (t *console) buildFocusedPath(node *i3.Node) map[i3.NodeID]bool {
+	path := make(map[i3.NodeID]bool)
+	t.findFocusedPath(node, path)
+	return path
+}
+
+// findFocusedPath recursively searches for the focused node
+// and marks all nodes on the path to it
+// Returns true if this node or any of its children is/contains the focused node
+func (t *console) findFocusedPath(node *i3.Node, path map[i3.NodeID]bool) bool {
+	if node == nil {
+		return false
+	}
+
+	// Check if this node is focused
+	if node.Focused {
+		path[node.ID] = true
+		return true
+	}
+
+	// Check if any child contains the focused node
+	for _, child := range node.Nodes {
+		if t.findFocusedPath(child, path) {
+			// This node is on the path to the focused node
+			path[node.ID] = true
+			return true
+		}
+	}
+
+	return false
+}
+
+func (t *console) print(node *i3.Node, prefix string, marker string, level int, focusedPath map[i3.NodeID]bool) {
 	if node == nil {
 		return
 	}
 
-	ftype := t.formatType(node, t.au)
-	flayout := t.formatLayout(node, t.au)
+	isOnFocusedPath := focusedPath[node.ID]
+	isFocused := node.Focused
+
+	ftype := t.formatType(node, t.au, isFocused)
+	flayout := t.formatLayout(node, t.au, isFocused)
+
+	// Make the marker bold if on focused path
+	displayMarker := marker
+	if isOnFocusedPath && marker != "" {
+		displayMarker = t.au.Bold(marker).String()
+	}
 
 	fmt.Fprint(
 		t.w,
 		prefix,
-		marker,
+		displayMarker,
 		ftype,
 		flayout,
 		" ",
@@ -73,19 +118,29 @@ func (t *console) print(node *i3.Node, prefix string, marker string, level int) 
 			newMarker = "├──" // middle node
 		}
 
+		// Determine the trunk character
+		trunkChar := "│  "
+		spaceChar := "   "
+
+		// Make trunk bold if this node is on the focused path and the child is too
+		childOnFocusedPath := focusedPath[n.ID]
+		if isOnFocusedPath && childOnFocusedPath {
+			trunkChar = t.au.Bold("│").String() + "  "
+		}
+
 		// i am currently a middle node
 		if marker == "├──" {
 			// so my children should display my trunk
-			newPrefix = newPrefix + "│  "
+			newPrefix = newPrefix + trunkChar
 		} else {
 			// don't ident starting from root
 			if level == 0 {
 				newPrefix = ""
 			} else {
-				newPrefix = newPrefix + "   "
+				newPrefix = newPrefix + spaceChar
 			}
 		}
 
-		t.print(n, newPrefix, newMarker, level+1)
+		t.print(n, newPrefix, newMarker, level+1, focusedPath)
 	}
 }

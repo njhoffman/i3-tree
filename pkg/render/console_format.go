@@ -7,14 +7,17 @@ import (
 	"go.i3wm.org/i3/v4"
 )
 
-func (t *console) wrapBrackets(s string) string {
+func (t *console) wrapBrackets(s string, bold bool) string {
 	if s != "" {
+		if bold {
+			return fmt.Sprint(t.au.Bold("[").String(), s, t.au.Bold("]").String())
+		}
 		return fmt.Sprint("[", s, "]")
 	}
 	return s
 }
 
-func (t *console) formatLayout(node *i3.Node, au aurora.Aurora) string {
+func (t *console) formatLayout(node *i3.Node, au aurora.Aurora, isFocused bool) string {
 	if node == nil {
 		return ""
 	}
@@ -39,13 +42,13 @@ func (t *console) formatLayout(node *i3.Node, au aurora.Aurora) string {
 
 	// only show layout if it has children
 	if len(node.Nodes) > 0 {
-		return t.wrapBrackets(formatFn(node.Layout, au))
+		return t.wrapBrackets(formatFn(node.Layout, au), isFocused)
 	}
 
 	return s
 }
 
-func (t *console) formatType(node *i3.Node, au aurora.Aurora) string {
+func (t *console) formatType(node *i3.Node, au aurora.Aurora, isFocused bool) string {
 	if node == nil {
 		return ""
 	}
@@ -65,5 +68,5 @@ func (t *console) formatType(node *i3.Node, au aurora.Aurora) string {
 		}
 	}
 
-	return t.wrapBrackets(formatFn(node.Type, au))
+	return t.wrapBrackets(formatFn(node.Type, au), isFocused)
 }

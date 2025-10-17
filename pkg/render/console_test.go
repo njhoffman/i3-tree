@@ -217,3 +217,113 @@ func TestConRendererWithColor(t *testing.T) {
 	got := writer.String()
 	assert.Equal(t, want, (got))
 }
+
+func TestConRendererWithFocusedBranch(t *testing.T) {
+	// Create a tree with a focused node
+	focusedNode := &i3.Node{
+		ID:      3,
+		Name:    "Focused Window",
+		Type:    i3.NodeType(i3.Con),
+		Focused: true,
+	}
+
+	ws1 := &i3.Node{
+		ID:     2,
+		Name:   "1",
+		Type:   i3.NodeType(i3.WorkspaceNode),
+		Layout: i3.Layout(i3.SplitH),
+		Nodes: []*i3.Node{
+			focusedNode,
+		},
+	}
+
+	output := &i3.Node{
+		ID:     1,
+		Name:   "HDMI-0",
+		Type:   i3.NodeType(i3.OutputNode),
+		Layout: i3.Layout(i3.OutputLayout),
+		Nodes: []*i3.Node{
+			ws1,
+		},
+	}
+
+	root := &i3.Node{
+		ID:   0,
+		Name: "root",
+		Type: i3.NodeType(i3.Root),
+		Nodes: []*i3.Node{
+			output,
+		},
+	}
+
+	tree := i3.Tree{Root: root}
+
+	// Expected output with bold markers (ANSI escape codes)
+	// \x1b[1m is the code for bold on, \x1b[0m is the code for bold/color off
+	want := "[root] root\n" +
+		"\x1b[1m└──\x1b[0m[\x1b[35moutput\x1b[0m][output] HDMI-0\n" +
+		"   \x1b[1m└──\x1b[0m[\x1b[36mworkspace\x1b[0m][\x1b[93msplith\x1b[0m] 1\n" +
+		"      \x1b[1m└──\x1b[0m\x1b[1m[\x1b[0m\x1b[34mcon\x1b[0m\x1b[1m]\x1b[0m Focused Window\n"
+
+	var writer bytes.Buffer
+	r := render.NewColoredConsole(io.Writer(&writer))
+	r.Render(&tree)
+
+	got := writer.String()
+	assert.Equal(t, want, got)
+}
+
+func TestConRendererNoColorWithFocusedBranch(t *testing.T) {
+	// Create a tree with a focused node (same as above but test no-color output)
+	focusedNode := &i3.Node{
+		ID:      3,
+		Name:    "Focused Window",
+		Type:    i3.NodeType(i3.Con),
+		Focused: true,
+	}
+
+	ws1 := &i3.Node{
+		ID:     2,
+		Name:   "1",
+		Type:   i3.NodeType(i3.WorkspaceNode),
+		Layout: i3.Layout(i3.SplitH),
+		Nodes: []*i3.Node{
+			focusedNode,
+		},
+	}
+
+	output := &i3.Node{
+		ID:     1,
+		Name:   "HDMI-0",
+		Type:   i3.NodeType(i3.OutputNode),
+		Layout: i3.Layout(i3.OutputLayout),
+		Nodes: []*i3.Node{
+			ws1,
+		},
+	}
+
+	root := &i3.Node{
+		ID:   0,
+		Name: "root",
+		Type: i3.NodeType(i3.Root),
+		Nodes: []*i3.Node{
+			output,
+		},
+	}
+
+	tree := i3.Tree{Root: root}
+
+	// With no color, there should be no bold codes, but still the same structure
+	want := `[root] root
+└──[output][output] HDMI-0
+   └──[workspace][splith] 1
+      └──[con] Focused Window
+`
+
+	var writer bytes.Buffer
+	r := render.NewMonochromaticConsole(io.Writer(&writer))
+	r.Render(&tree)
+
+	got := writer.String()
+	assert.Equal(t, want, got)
+}
