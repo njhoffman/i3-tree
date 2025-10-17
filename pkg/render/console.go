@@ -200,10 +200,19 @@ func (t *console) print(node *i3.Node, prefix string, marker string, level int, 
 	if node.Type == "floating_con" && len(node.Nodes) == 1 {
 		child := node.Nodes[0]
 
-		// Apply focus_branches formatting if on focused path or has focused sibling
+		// Apply focus_branches formatting
 		displayMarker := marker
-		if (isOnFocusedPath || hasFocusedSibling) && marker != "" {
-			displayMarker = t.config.Formatting.FocusBranches.ApplyFormat(marker, t.au)
+		if marker != "" {
+			if isOnFocusedPath {
+				// On the actual focused path: highlight entire marker
+				displayMarker = t.config.Formatting.FocusBranches.ApplyFormat(marker, t.au)
+			} else if hasFocusedSibling {
+				// Has focused sibling: highlight only connector
+				connector := marker[:len(t.config.Display.Branches.ConnectH)]
+				horizontal := marker[len(connector):]
+				formattedConnector := t.config.Formatting.FocusBranches.ApplyFormat(connector, t.au)
+				displayMarker = formattedConnector + horizontal
+			}
 		}
 
 		// Format the type as fcon
@@ -226,12 +235,19 @@ func (t *console) print(node *i3.Node, prefix string, marker string, level int, 
 	ftype := t.formatType(node, t.au, isFocused, isFloating)
 	flayout := t.formatLayout(node, t.au, isFocused)
 
-	// Apply focus_branches formatting to the entire marker if on focused path
-	// or if this node has a focused sibling (showing path continuation)
+	// Apply focus_branches formatting to marker
 	displayMarker := marker
-	if (isOnFocusedPath || hasFocusedSibling) && marker != "" {
-		// Apply formatting to the entire marker (connector + horizontal chars)
-		displayMarker = t.config.Formatting.FocusBranches.ApplyFormat(marker, t.au)
+	if marker != "" {
+		if isOnFocusedPath {
+			// On the actual focused path: highlight entire marker (connector + horizontal)
+			displayMarker = t.config.Formatting.FocusBranches.ApplyFormat(marker, t.au)
+		} else if hasFocusedSibling {
+			// Has focused sibling (path continuation): highlight only connector
+			connector := marker[:len(t.config.Display.Branches.ConnectH)]
+			horizontal := marker[len(connector):]
+			formattedConnector := t.config.Formatting.FocusBranches.ApplyFormat(connector, t.au)
+			displayMarker = formattedConnector + horizontal
+		}
 	}
 
 	// Format additional window details (class, marks, icons)

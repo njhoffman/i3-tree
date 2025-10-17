@@ -257,7 +257,9 @@ func TestConRendererWithFocusedBranch(t *testing.T) {
 	tree := i3.Tree{Root: root}
 
 	// Expected output with bold markers (ANSI escape codes)
-	// \x1b[1m is the code for bold on, \x1b[0m is the code for bold/color off
+	// On focused path: entire marker highlighted (connector + horizontal)
+	// Has focused sibling: only connector highlighted
+	// \x1b[1;38;5;80m = bright cyan (color 81) bold
 	// \x1b[1;34m is bold + blue color for the focused con type
 	want := "[root][\x1b[33m\x1b[0m] root\n" +
 		"\x1b[1;38;5;80m└──\x1b[0m[\x1b[35moutput\x1b[0m][\x1b[33moutput\x1b[0m] HDMI-0\n" +
