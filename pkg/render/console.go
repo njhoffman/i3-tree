@@ -54,7 +54,7 @@ func newConsole(w io.Writer, colors bool, cfg *config.Config) *console {
 func (t *console) Render(tree *i3.Tree) {
 	// Build a set of node IDs that are on the path to the focused node
 	focusedPath := t.buildFocusedPath(tree.Root)
-	t.print(tree.Root, "", "", 0, focusedPath, false)
+	t.print(tree.Root, "", "", 0, focusedPath, false, false)
 }
 
 // buildFocusedPath finds the path from root to the focused node
@@ -188,7 +188,7 @@ func (t *console) formatWindowDetails(node *i3.Node, isFloating bool) string {
 	return result
 }
 
-func (t *console) print(node *i3.Node, prefix string, marker string, level int, focusedPath map[i3.NodeID]bool, isFloating bool) {
+func (t *console) print(node *i3.Node, prefix string, marker string, level int, focusedPath map[i3.NodeID]bool, isFloating bool, hasFocusedSibling bool) {
 	if node == nil {
 		return
 	}
@@ -200,9 +200,9 @@ func (t *console) print(node *i3.Node, prefix string, marker string, level int, 
 	if node.Type == "floating_con" && len(node.Nodes) == 1 {
 		child := node.Nodes[0]
 
-		// Make the marker bold and apply focus_branches formatting if on focused path
+		// Apply focus_branches formatting if on focused path or has focused sibling
 		displayMarker := marker
-		if isOnFocusedPath && marker != "" {
+		if (isOnFocusedPath || hasFocusedSibling) && marker != "" {
 			displayMarker = t.config.Formatting.FocusBranches.ApplyFormat(marker, t.au)
 		}
 
@@ -227,8 +227,9 @@ func (t *console) print(node *i3.Node, prefix string, marker string, level int, 
 	flayout := t.formatLayout(node, t.au, isFocused)
 
 	// Apply focus_branches formatting to the entire marker if on focused path
+	// or if this node has a focused sibling (showing path continuation)
 	displayMarker := marker
-	if isOnFocusedPath && marker != "" {
+	if (isOnFocusedPath || hasFocusedSibling) && marker != "" {
 		// Apply formatting to the entire marker (connector + horizontal chars)
 		displayMarker = t.config.Formatting.FocusBranches.ApplyFormat(marker, t.au)
 	}
@@ -266,33 +267,39 @@ func (t *console) print(node *i3.Node, prefix string, marker string, level int, 
 		}
 		newMarker = connector + t.config.Display.Branches.Horizontal // e.g., "├──"
 
-		// Determine the trunk character using configurable branches
-		trunkChar := t.config.Display.Branches.Vertical + "  "
-		spaceChar := "   "
-
-		// Apply focus highlighting to trunk if on focused path
-		childOnFocusedPath := focusedPath[n.ID]
-		if isOnFocusedPath && childOnFocusedPath {
-			formattedVertical := t.config.Formatting.FocusBranches.ApplyFormat(t.config.Display.Branches.Vertical, t.au)
-			formattedSpaces := t.config.Formatting.FocusBranches.ApplyFormat("  ", t.au)
-			trunkChar = formattedVertical + formattedSpaces
+		// Check if any subsequent sibling is on the focused path
+		// This determines if the trunk should be highlighted
+		anySiblingOnFocusedPath := false
+		for j := i + 1; j < len(allNodes); j++ {
+			if focusedPath[allNodes[j].ID] {
+				anySiblingOnFocusedPath = true
+				break
+			}
 		}
 
 		// Determine prefix for child based on current marker
 		// Check if current marker starts with ConnectH (we're a middle node)
 		// Use strings.HasPrefix to properly handle UTF-8 characters
 		if strings.HasPrefix(marker, t.config.Display.Branches.ConnectH) {
-			// so my children should display my trunk
+			// This node has more children, so add trunk to prefix
+			// Highlight the trunk if this node has a focused sibling (passed from parent)
+			var trunkChar string
+			if hasFocusedSibling {
+				formattedVertical := t.config.Formatting.FocusBranches.ApplyFormat(t.config.Display.Branches.Vertical, t.au)
+				trunkChar = formattedVertical + "  "
+			} else {
+				trunkChar = t.config.Display.Branches.Vertical + "  "
+			}
 			newPrefix = newPrefix + trunkChar
 		} else {
-			// don't ident starting from root
+			// don't indent starting from root
 			if level == 0 {
 				newPrefix = ""
 			} else {
-				newPrefix = newPrefix + spaceChar
+				newPrefix = newPrefix + "   "
 			}
 		}
 
-		t.print(n, newPrefix, newMarker, level+1, focusedPath, childIsFloating)
+		t.print(n, newPrefix, newMarker, level+1, focusedPath, childIsFloating, anySiblingOnFocusedPath)
 	}
 }

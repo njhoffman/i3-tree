@@ -10,11 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **BREAKING**: Branch connectors in config reduced to single characters (`├` and `└` instead of `├──` and `└──`)
 - Branch horizontal characters now appended automatically during rendering
-- Focus highlighting now includes trunk characters (`│`) and spacing in addition to connectors
+- Focus highlighting now shows complete visual path from root to focused window:
+  - Highlights all connectors (`├──`, `└──`) on the focused path
+  - Highlights connectors that have a focused sibling (showing path continuation)
+  - Highlights vertical trunk characters (`│`) that lead to focused siblings
+  - Markers and trunks are only highlighted when they represent the path to the focused node
 - Focus brackets now display in bright cyan (color 81) by default
 
 ### Fixed
-- UTF-8 character comparison for branch detection now works correctly
+- UTF-8 character comparison for branch detection now works correctly using `strings.HasPrefix()`
 
 ## [1.1.0] - 2025-10-16
 
