@@ -112,8 +112,8 @@ func DefaultConfig() *Config {
 			Branches: Branches{
 				Horizontal: "──",
 				Vertical:   "│",
-				ConnectH:   "├──",
-				ConnectV:   "└──",
+				ConnectH:   "├",
+				ConnectV:   "└",
 			},
 		},
 		Formatting: FormattingOptions{
@@ -171,7 +171,7 @@ func DefaultConfig() *Config {
 				Attributes: Attributes{Bold: true},
 			},
 			FocusBrackets: NodeFormat{
-				Foreground: 0,   // default
+				Foreground: 81,  // bright cyan (as requested)
 				Background: 0,
 				Attributes: Attributes{Bold: true},
 			},

@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-10-16
+
+### Changed
+- **BREAKING**: Branch connectors in config reduced to single characters (`├` and `└` instead of `├──` and `└──`)
+- Branch horizontal characters now appended automatically during rendering
+- Focus highlighting now includes trunk characters (`│`) and spacing in addition to connectors
+- Focus brackets now display in bright cyan (color 81) by default
+
+### Fixed
+- UTF-8 character comparison for branch detection now works correctly
+
 ## [1.1.0] - 2025-10-16
 
 ### Added

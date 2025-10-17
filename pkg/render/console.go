@@ -3,6 +3,7 @@ package render
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/eh-am/i3-tree/pkg/config"
 	"github.com/logrusorgru/aurora"
@@ -225,9 +226,10 @@ func (t *console) print(node *i3.Node, prefix string, marker string, level int, 
 	ftype := t.formatType(node, t.au, isFocused, isFloating)
 	flayout := t.formatLayout(node, t.au, isFocused)
 
-	// Make the marker bold and apply focus_branches formatting if on focused path
+	// Apply focus_branches formatting to the entire marker if on focused path
 	displayMarker := marker
 	if isOnFocusedPath && marker != "" {
+		// Apply formatting to the entire marker (connector + horizontal chars)
 		displayMarker = t.config.Formatting.FocusBranches.ApplyFormat(marker, t.au)
 	}
 
@@ -255,26 +257,31 @@ func (t *console) print(node *i3.Node, prefix string, marker string, level int, 
 		// Check if this is a floating node
 		childIsFloating := i >= len(node.Nodes)
 
-		// figure out what's the marker for the next iteration using configurable branches
+		// Build the marker: connector + horizontal
+		var connector string
 		if i == len(allNodes)-1 {
-			newMarker = t.config.Display.Branches.ConnectV // └──
+			connector = t.config.Display.Branches.ConnectV // └
 		} else {
-			newMarker = t.config.Display.Branches.ConnectH // ├──
+			connector = t.config.Display.Branches.ConnectH // ├
 		}
+		newMarker = connector + t.config.Display.Branches.Horizontal // e.g., "├──"
 
 		// Determine the trunk character using configurable branches
 		trunkChar := t.config.Display.Branches.Vertical + "  "
 		spaceChar := "   "
 
-		// Make trunk bold and apply focus_branches formatting if on focused path
+		// Apply focus highlighting to trunk if on focused path
 		childOnFocusedPath := focusedPath[n.ID]
 		if isOnFocusedPath && childOnFocusedPath {
 			formattedVertical := t.config.Formatting.FocusBranches.ApplyFormat(t.config.Display.Branches.Vertical, t.au)
-			trunkChar = formattedVertical + "  "
+			formattedSpaces := t.config.Formatting.FocusBranches.ApplyFormat("  ", t.au)
+			trunkChar = formattedVertical + formattedSpaces
 		}
 
-		// i am currently a middle node
-		if marker == t.config.Display.Branches.ConnectH {
+		// Determine prefix for child based on current marker
+		// Check if current marker starts with ConnectH (we're a middle node)
+		// Use strings.HasPrefix to properly handle UTF-8 characters
+		if strings.HasPrefix(marker, t.config.Display.Branches.ConnectH) {
 			// so my children should display my trunk
 			newPrefix = newPrefix + trunkChar
 		} else {
