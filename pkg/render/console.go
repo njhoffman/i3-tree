@@ -99,13 +99,53 @@ func (t *console) findFocusedPath(node *i3.Node, path map[i3.NodeID]bool) bool {
 	return false
 }
 
-// formatWindowDetails formats additional window information like class, marks, and status icons
+// formatWindowDetails formats additional window information like icons, class, marks, and title
+// Icons are displayed first, followed by class, title, and marks
 func (t *console) formatWindowDetails(node *i3.Node, isFloating bool) string {
 	if node == nil {
 		return ""
 	}
 
 	var result string
+
+	// Build status icons first if enabled
+	icons := ""
+	if t.config.Display.ShowIcons {
+		// Fullscreen icon
+		if t.config.Icons.Fullscreen.Enabled && node.FullscreenMode != 0 {
+			icon := t.config.Icons.Fullscreen.ApplyFormat(t.config.Icons.Fullscreen.Icon, t.au)
+			icons += " " + icon
+		}
+
+		// Floating icon
+		if t.config.Icons.Floating.Enabled && (isFloating || node.Type == "floating_con") {
+			icon := t.config.Icons.Floating.ApplyFormat(t.config.Icons.Floating.Icon, t.au)
+			icons += " " + icon
+		}
+
+		// Sticky icon - Note: i3 doesn't expose sticky directly in the tree
+		// We check if a window has the special mark "_sticky" which is often used
+		isSticky := false
+		for _, mark := range node.Marks {
+			if mark == "_sticky" {
+				isSticky = true
+				break
+			}
+		}
+		if t.config.Icons.Sticky.Enabled && isSticky {
+			icon := t.config.Icons.Sticky.ApplyFormat(t.config.Icons.Sticky.Icon, t.au)
+			icons += " " + icon
+		}
+
+		// Urgent icon
+		if t.config.Icons.Urgent.Enabled && node.Urgent {
+			icon := t.config.Icons.Urgent.ApplyFormat(t.config.Icons.Urgent.Icon, t.au)
+			icons += " " + icon
+		}
+	}
+
+	// Add icons first
+	result += icons
 
 	// Add window class if available (only for con type)
 	if t.config.Display.ShowWindowClass && node.Type == "con" && node.WindowProperties.Class != "" {
@@ -136,47 +176,6 @@ func (t *console) formatWindowDetails(node *i3.Node, isFloating bool) string {
 		result += " " + formattedMarks
 	}
 
-	// Add status icons if enabled
-	if !t.config.Display.ShowIcons {
-		return result
-	}
-
-	icons := ""
-
-	// Fullscreen icon
-	if t.config.Icons.Fullscreen.Enabled && node.FullscreenMode != 0 {
-		icon := t.config.Icons.Fullscreen.ApplyFormat(t.config.Icons.Fullscreen.Icon, t.au)
-		icons += " " + icon
-	}
-
-	// Floating icon
-	if t.config.Icons.Floating.Enabled && (isFloating || node.Type == "floating_con") {
-		icon := t.config.Icons.Floating.ApplyFormat(t.config.Icons.Floating.Icon, t.au)
-		icons += " " + icon
-	}
-
-	// Sticky icon - Note: i3 doesn't expose sticky directly in the tree
-	// We check if a window has the special mark "_sticky" which is often used
-	isSticky := false
-	for _, mark := range node.Marks {
-		if mark == "_sticky" {
-			isSticky = true
-			break
-		}
-	}
-	if t.config.Icons.Sticky.Enabled && isSticky {
-		icon := t.config.Icons.Sticky.ApplyFormat(t.config.Icons.Sticky.Icon, t.au)
-		icons += " " + icon
-	}
-
-	// Urgent icon
-	if t.config.Icons.Urgent.Enabled && node.Urgent {
-		icon := t.config.Icons.Urgent.ApplyFormat(t.config.Icons.Urgent.Icon, t.au)
-		icons += " " + icon
-	}
-
-	result += icons
-
 	return result
 }
 
@@ -187,6 +186,33 @@ func (t *console) print(node *i3.Node, prefix string, marker string, level int, 
 
 	isOnFocusedPath := focusedPath[node.ID]
 	isFocused := node.Focused
+
+	// Special handling for floating_con: collapse it with its child
+	if node.Type == "floating_con" && len(node.Nodes) == 1 {
+		child := node.Nodes[0]
+
+		// Make the marker bold if on focused path
+		displayMarker := marker
+		if isOnFocusedPath && marker != "" {
+			displayMarker = t.au.Bold(marker).String()
+		}
+
+		// Format the type as fcon
+		ftype := t.formatType(node, t.au, child.Focused, true)
+
+		// Get child's window details (which will include icons first)
+		windowDetails := t.formatWindowDetails(child, true)
+
+		fmt.Fprint(
+			t.w,
+			prefix,
+			displayMarker,
+			ftype,
+			windowDetails,
+			"\n",
+		)
+		return
+	}
 
 	ftype := t.formatType(node, t.au, isFocused, isFloating)
 	flayout := t.formatLayout(node, t.au, isFocused)

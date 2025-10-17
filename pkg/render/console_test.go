@@ -365,11 +365,12 @@ func TestConRendererWithWindowDetails(t *testing.T) {
 	tree := i3.Tree{Root: root}
 
 	// Expected output with window class, marks in red, and status icons
+	// Icons now appear before class name
 	// \x1b[31m = red for marks
 	// \x1b[1;97m = bright bold white for icons
 	want := "[root] root\n" +
 		"└──[\x1b[36mworkspace\x1b[0m][\x1b[93msplith\x1b[0m] 1\n" +
-		"   └──[\x1b[34mcon\x1b[0m] (Alacritty) Main Terminal \x1b[31m[_last, scratch]\x1b[0m \x1b[1;97m󰊓\x1b[0m \x1b[1;97m\x1b[0m\n"
+		"   └──[\x1b[34mcon\x1b[0m] \x1b[1;97m󰊓\x1b[0m \x1b[1;97m\x1b[0m (Alacritty) Main Terminal \x1b[31m[_last, scratch]\x1b[0m\n"
 
 	var writer bytes.Buffer
 	r := render.NewColoredConsole(io.Writer(&writer))
@@ -430,11 +431,11 @@ func TestConRendererWithFloatingWindows(t *testing.T) {
 	tree := i3.Tree{Root: root}
 
 	// Expected output with [fcon] for floating containers
+	// Floating containers are now collapsed onto one line with icon before class
 	want := "[root] root\n" +
 		"└──[\x1b[36mworkspace\x1b[0m][\x1b[93msplith\x1b[0m] 1\n" +
 		"   ├──[\x1b[34mcon\x1b[0m] Regular Window\n" +
-		"   └──[\x1b[34mfcon\x1b[0m][\x1b[93msplith\x1b[0m] \x1b[1;97m󰭽\x1b[0m\n" +
-		"      └──[\x1b[34mcon\x1b[0m] (FloatingApp) Floating App\n"
+		"   └──[\x1b[34mfcon\x1b[0m] \x1b[1;97m󰭽\x1b[0m (FloatingApp) Floating App\n"
 
 	var writer bytes.Buffer
 	r := render.NewColoredConsole(io.Writer(&writer))
