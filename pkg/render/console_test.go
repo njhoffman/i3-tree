@@ -260,10 +260,11 @@ func TestConRendererWithFocusedBranch(t *testing.T) {
 
 	// Expected output with bold markers (ANSI escape codes)
 	// \x1b[1m is the code for bold on, \x1b[0m is the code for bold/color off
+	// \x1b[1;34m is bold + blue color for the focused con type
 	want := "[root] root\n" +
 		"\x1b[1m└──\x1b[0m[\x1b[35moutput\x1b[0m][output] HDMI-0\n" +
 		"   \x1b[1m└──\x1b[0m[\x1b[36mworkspace\x1b[0m][\x1b[93msplith\x1b[0m] 1\n" +
-		"      \x1b[1m└──\x1b[0m\x1b[1m[\x1b[0m\x1b[34mcon\x1b[0m\x1b[1m]\x1b[0m Focused Window\n"
+		"      \x1b[1m└──\x1b[0m\x1b[1m[\x1b[0m\x1b[1;34mcon\x1b[0m\x1b[1m]\x1b[0m Focused Window\n"
 
 	var writer bytes.Buffer
 	r := render.NewColoredConsole(io.Writer(&writer))
