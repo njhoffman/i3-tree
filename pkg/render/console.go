@@ -79,6 +79,73 @@ func (t *console) findFocusedPath(node *i3.Node, path map[i3.NodeID]bool) bool {
 	return false
 }
 
+// formatWindowDetails formats additional window information like class, marks, and status icons
+func (t *console) formatWindowDetails(node *i3.Node) string {
+	if node == nil {
+		return ""
+	}
+
+	var result string
+
+	// Add window class if available (only for con type)
+	if node.Type == "con" && node.WindowProperties.Class != "" {
+		result += fmt.Sprintf(" (%s)", node.WindowProperties.Class)
+	}
+
+	// Add window title
+	if node.Name != "" {
+		// Truncate title if too long (> 80 chars)
+		title := node.Name
+		maxLen := 80
+		if len(title) > maxLen {
+			title = title[:maxLen-3] + "..."
+		}
+		result += " " + title
+	}
+
+	// Add marks in red brackets
+	if len(node.Marks) > 0 {
+		marksStr := ""
+		for i, mark := range node.Marks {
+			if i > 0 {
+				marksStr += ", "
+			}
+			marksStr += mark
+		}
+		result += " " + t.au.Red(fmt.Sprintf("[%s]", marksStr)).String()
+	}
+
+	// Add status icons
+	icons := ""
+
+	// Fullscreen icon
+	if node.FullscreenMode != 0 {
+		icons += " " + t.au.Bold(t.au.BrightWhite("󰊓")).String()
+	}
+
+	// Sticky icon - Note: i3 doesn't expose sticky directly in the tree
+	// We check if a window has the special mark "_sticky" which is often used
+	isSticky := false
+	for _, mark := range node.Marks {
+		if mark == "_sticky" {
+			isSticky = true
+			break
+		}
+	}
+	if isSticky {
+		icons += " " + t.au.Bold(t.au.BrightWhite("󱍭")).String()
+	}
+
+	// Urgent icon
+	if node.Urgent {
+		icons += " " + t.au.Bold(t.au.BrightWhite("")).String()
+	}
+
+	result += icons
+
+	return result
+}
+
 func (t *console) print(node *i3.Node, prefix string, marker string, level int, focusedPath map[i3.NodeID]bool) {
 	if node == nil {
 		return
@@ -96,14 +163,16 @@ func (t *console) print(node *i3.Node, prefix string, marker string, level int, 
 		displayMarker = t.au.Bold(marker).String()
 	}
 
+	// Format additional window details (class, marks, icons)
+	windowDetails := t.formatWindowDetails(node)
+
 	fmt.Fprint(
 		t.w,
 		prefix,
 		displayMarker,
 		ftype,
 		flayout,
-		" ",
-		node.Name,
+		windowDetails,
 		"\n",
 	)
 

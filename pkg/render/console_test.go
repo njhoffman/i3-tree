@@ -163,10 +163,10 @@ func TestConRendererNoColor(t *testing.T) {
    │  ├──[con] VLC media player
    │  └──[con] Slack
    └──[workspace][splith] 5
-      ├──[con][splitv] 
+      ├──[con][splitv]
       │  ├──[con] /bin/bash
       │  └──[con] /bin/bash
-      └──[con][splitv] 
+      └──[con][splitv]
          ├──[con] /bin/bash
          └──[con] /bin/bash
 `
@@ -200,10 +200,10 @@ func TestConRendererWithColor(t *testing.T) {
    │  ├──[[34mcon[0m] VLC media player
    │  └──[[34mcon[0m] Slack
    └──[[36mworkspace[0m][[93msplith[0m] 5
-      ├──[[34mcon[0m][[33msplitv[0m] 
+      ├──[[34mcon[0m][[33msplitv[0m]
       │  ├──[[34mcon[0m] /bin/bash
       │  └──[[34mcon[0m] /bin/bash
-      └──[[34mcon[0m][[33msplitv[0m] 
+      └──[[34mcon[0m][[33msplitv[0m]
          ├──[[34mcon[0m] /bin/bash
          └──[[34mcon[0m] /bin/bash
 `
@@ -323,6 +323,56 @@ func TestConRendererNoColorWithFocusedBranch(t *testing.T) {
 
 	var writer bytes.Buffer
 	r := render.NewMonochromaticConsole(io.Writer(&writer))
+	r.Render(&tree)
+
+	got := writer.String()
+	assert.Equal(t, want, got)
+}
+
+func TestConRendererWithWindowDetails(t *testing.T) {
+	// Create a tree with windows that have class, marks, and status flags
+	windowWithDetails := &i3.Node{
+		ID:   3,
+		Name: "Main Terminal",
+		Type: i3.NodeType(i3.Con),
+		WindowProperties: i3.WindowProperties{
+			Class: "Alacritty",
+		},
+		Marks:          []string{"_last", "scratch"},
+		FullscreenMode: 1,
+		Urgent:         true,
+	}
+
+	ws1 := &i3.Node{
+		ID:     2,
+		Name:   "1",
+		Type:   i3.NodeType(i3.WorkspaceNode),
+		Layout: i3.Layout(i3.SplitH),
+		Nodes: []*i3.Node{
+			windowWithDetails,
+		},
+	}
+
+	root := &i3.Node{
+		ID:   0,
+		Name: "root",
+		Type: i3.NodeType(i3.Root),
+		Nodes: []*i3.Node{
+			ws1,
+		},
+	}
+
+	tree := i3.Tree{Root: root}
+
+	// Expected output with window class, marks in red, and status icons
+	// \x1b[31m = red for marks
+	// \x1b[1;97m = bright bold white for icons
+	want := "[root] root\n" +
+		"└──[\x1b[36mworkspace\x1b[0m][\x1b[93msplith\x1b[0m] 1\n" +
+		"   └──[\x1b[34mcon\x1b[0m] (Alacritty) Main Terminal \x1b[31m[_last, scratch]\x1b[0m \x1b[1;97m󰊓\x1b[0m \x1b[1;97m\x1b[0m\n"
+
+	var writer bytes.Buffer
+	r := render.NewColoredConsole(io.Writer(&writer))
 	r.Render(&tree)
 
 	got := writer.String()
