@@ -24,10 +24,19 @@ type Config struct {
 
 // DisplayOptions controls what information is shown
 type DisplayOptions struct {
-	ShowWindowTitles bool `json:"show_window_titles"`
-	ShowMarks        bool `json:"show_marks"`
-	ShowWindowClass  bool `json:"show_window_class"`
-	ShowIcons        bool `json:"show_icons"`
+	ShowWindowTitles bool     `json:"show_window_titles"`
+	ShowMarks        bool     `json:"show_marks"`
+	ShowWindowClass  bool     `json:"show_window_class"`
+	ShowIcons        bool     `json:"show_icons"`
+	Branches         Branches `json:"branches"`
+}
+
+// Branches defines the characters used for tree visualization
+type Branches struct {
+	Horizontal string `json:"horizontal"` // ──
+	Vertical   string `json:"vertical"`   // │
+	ConnectH   string `json:"connect_h"`  // ├
+	ConnectV   string `json:"connect_v"`  // └─
 }
 
 // FormattingOptions contains formatting for all node types and layouts
@@ -39,16 +48,24 @@ type FormattingOptions struct {
 	Con       NodeFormat `json:"con"`
 	FloatCon  NodeFormat `json:"float_con"`
 
-	// Layout formatting
-	SplitH  NodeFormat `json:"splith"`
-	SplitV  NodeFormat `json:"splitv"`
-	Stacked NodeFormat `json:"stacked"`
-	Tabbed  NodeFormat `json:"tabbed"`
+	// Layout formatting (consolidated)
+	WindowLayout NodeFormat `json:"window_layout"`
 
-	// Special elements
-	Marks        NodeFormat `json:"marks"`
+	// Window element formatting
+	WindowMarks NodeFormat `json:"window_marks"`
+	WindowClass NodeFormat `json:"window_class"`
+	WindowTitle NodeFormat `json:"window_title"`
+
+	// Focus-specific formatting
+	FocusType     NodeFormat `json:"focus_type"`
+	FocusBrackets NodeFormat `json:"focus_brackets"`
+	FocusBranches NodeFormat `json:"focus_branches"`
+	FocusClass    NodeFormat `json:"focus_class"`
+
+	// General elements
 	Brackets     NodeFormat `json:"brackets"`
 	TreeBranches NodeFormat `json:"tree_branches"`
+	Default      NodeFormat `json:"default"`
 }
 
 // IconOptions contains icons and their colors for status indicators
@@ -92,11 +109,17 @@ func DefaultConfig() *Config {
 			ShowMarks:        true,
 			ShowWindowClass:  true,
 			ShowIcons:        true,
+			Branches: Branches{
+				Horizontal: "──",
+				Vertical:   "│",
+				ConnectH:   "├──",
+				ConnectV:   "└──",
+			},
 		},
 		Formatting: FormattingOptions{
 			Root: NodeFormat{
-				Foreground: 0,   // default
-				Background: 0,   // default
+				Foreground: 0,
+				Background: 0,
 				Attributes: Attributes{},
 			},
 			Output: NodeFormat{
@@ -119,31 +142,50 @@ func DefaultConfig() *Config {
 				Background: 0,
 				Attributes: Attributes{},
 			},
-			SplitH: NodeFormat{
-				Foreground: 11,  // bright yellow (code 93)
+			// Consolidated layout formatting (used for all layouts)
+			WindowLayout: NodeFormat{
+				Foreground: 3,   // yellow (default, can be overridden)
 				Background: 0,
 				Attributes: Attributes{},
 			},
-			SplitV: NodeFormat{
-				Foreground: 3,   // yellow (code 33)
-				Background: 0,
-				Attributes: Attributes{},
-			},
-			Stacked: NodeFormat{
-				Foreground: 10,  // bright green (code 92)
-				Background: 0,
-				Attributes: Attributes{},
-			},
-			Tabbed: NodeFormat{
-				Foreground: 2,   // green (code 32)
-				Background: 0,
-				Attributes: Attributes{},
-			},
-			Marks: NodeFormat{
+			// Window element formatting
+			WindowMarks: NodeFormat{
 				Foreground: 1,   // red (code 31)
 				Background: 0,
 				Attributes: Attributes{},
 			},
+			WindowClass: NodeFormat{
+				Foreground: 0,   // default
+				Background: 0,
+				Attributes: Attributes{},
+			},
+			WindowTitle: NodeFormat{
+				Foreground: 0,   // default
+				Background: 0,
+				Attributes: Attributes{},
+			},
+			// Focus-specific formatting
+			FocusType: NodeFormat{
+				Foreground: 0,   // default (will use node type color + bold)
+				Background: 0,
+				Attributes: Attributes{Bold: true},
+			},
+			FocusBrackets: NodeFormat{
+				Foreground: 0,   // default
+				Background: 0,
+				Attributes: Attributes{Bold: true},
+			},
+			FocusBranches: NodeFormat{
+				Foreground: 81,  // bright cyan (as requested)
+				Background: 0,
+				Attributes: Attributes{Bold: true},
+			},
+			FocusClass: NodeFormat{
+				Foreground: 255, // bright white (as requested)
+				Background: 0,
+				Attributes: Attributes{Bold: true},
+			},
+			// General elements
 			Brackets: NodeFormat{
 				Foreground: 0,
 				Background: 0,
@@ -151,6 +193,11 @@ func DefaultConfig() *Config {
 			},
 			TreeBranches: NodeFormat{
 				Foreground: 0,
+				Background: 0,
+				Attributes: Attributes{},
+			},
+			Default: NodeFormat{
+				Foreground: 0,   // default terminal color
 				Background: 0,
 				Attributes: Attributes{},
 			},

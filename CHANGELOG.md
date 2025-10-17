@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-10-16
+
+### Added
+- Configurable tree branch characters (horizontal, vertical, connect_h, connect_v)
+- New formatting options for window elements: `window_class`, `window_title`
+- Focus-specific formatting options: `focus_type`, `focus_brackets`, `focus_branches`, `focus_class`
+- Default formatting option for all other text
+
+### Changed
+- **BREAKING**: Config field `marks` renamed to `window_marks` in formatting options
+- **BREAKING**: Individual layout configs (splith, splitv, tabbed, stacked) replaced with single `window_layout` config
+- Focus branches now display in bright cyan (color 81) by default
+- Focused window class now displays in bright white (color 255) by default
+- All layout types now use consistent yellow coloring (color 33) by default
+
 ## [1.0.0] - 2025-10-16
 
 ### Added

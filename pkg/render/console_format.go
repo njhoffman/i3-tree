@@ -25,26 +25,8 @@ func (t *console) formatLayout(node *i3.Node, au aurora.Aurora, isFocused bool) 
 
 	formatFn := func(layout i3.Layout, au aurora.Aurora) string {
 		s := string(layout)
-
-		// Use config formatting for layouts
-		var nodeFormat *config.NodeFormat
-		switch layout {
-		case "stacked":
-			nodeFormat = &t.config.Formatting.Stacked
-		case "tabbed":
-			nodeFormat = &t.config.Formatting.Tabbed
-		case "splith":
-			nodeFormat = &t.config.Formatting.SplitH
-		case "splitv":
-			nodeFormat = &t.config.Formatting.SplitV
-		default:
-			return s
-		}
-
-		if nodeFormat != nil {
-			return nodeFormat.ApplyFormat(s, au)
-		}
-		return s
+		// Use consolidated window_layout formatting for all layouts
+		return t.config.Formatting.WindowLayout.ApplyFormat(s, au)
 	}
 
 	s := ""

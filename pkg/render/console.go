@@ -149,7 +149,14 @@ func (t *console) formatWindowDetails(node *i3.Node, isFloating bool) string {
 
 	// Add window class if available (only for con type)
 	if t.config.Display.ShowWindowClass && node.Type == "con" && node.WindowProperties.Class != "" {
-		result += fmt.Sprintf(" (%s)", node.WindowProperties.Class)
+		className := fmt.Sprintf("(%s)", node.WindowProperties.Class)
+		// Apply focus_class formatting if this is a focused node
+		if node.Focused {
+			className = t.config.Formatting.FocusClass.ApplyFormat(className, t.au)
+		} else {
+			className = t.config.Formatting.WindowClass.ApplyFormat(className, t.au)
+		}
+		result += " " + className
 	}
 
 	// Add window title
@@ -160,7 +167,8 @@ func (t *console) formatWindowDetails(node *i3.Node, isFloating bool) string {
 		if len(title) > maxLen {
 			title = title[:maxLen-3] + "..."
 		}
-		result += " " + title
+		formattedTitle := t.config.Formatting.WindowTitle.ApplyFormat(title, t.au)
+		result += " " + formattedTitle
 	}
 
 	// Add marks in configured color brackets
@@ -172,7 +180,7 @@ func (t *console) formatWindowDetails(node *i3.Node, isFloating bool) string {
 			}
 			marksStr += mark
 		}
-		formattedMarks := t.config.Formatting.Marks.ApplyFormat(fmt.Sprintf("[%s]", marksStr), t.au)
+		formattedMarks := t.config.Formatting.WindowMarks.ApplyFormat(fmt.Sprintf("[%s]", marksStr), t.au)
 		result += " " + formattedMarks
 	}
 
@@ -191,10 +199,10 @@ func (t *console) print(node *i3.Node, prefix string, marker string, level int, 
 	if node.Type == "floating_con" && len(node.Nodes) == 1 {
 		child := node.Nodes[0]
 
-		// Make the marker bold if on focused path
+		// Make the marker bold and apply focus_branches formatting if on focused path
 		displayMarker := marker
 		if isOnFocusedPath && marker != "" {
-			displayMarker = t.au.Bold(marker).String()
+			displayMarker = t.config.Formatting.FocusBranches.ApplyFormat(marker, t.au)
 		}
 
 		// Format the type as fcon
@@ -217,10 +225,10 @@ func (t *console) print(node *i3.Node, prefix string, marker string, level int, 
 	ftype := t.formatType(node, t.au, isFocused, isFloating)
 	flayout := t.formatLayout(node, t.au, isFocused)
 
-	// Make the marker bold if on focused path
+	// Make the marker bold and apply focus_branches formatting if on focused path
 	displayMarker := marker
 	if isOnFocusedPath && marker != "" {
-		displayMarker = t.au.Bold(marker).String()
+		displayMarker = t.config.Formatting.FocusBranches.ApplyFormat(marker, t.au)
 	}
 
 	// Format additional window details (class, marks, icons)
@@ -247,25 +255,26 @@ func (t *console) print(node *i3.Node, prefix string, marker string, level int, 
 		// Check if this is a floating node
 		childIsFloating := i >= len(node.Nodes)
 
-		// figure out what's the marker for the next iteration
+		// figure out what's the marker for the next iteration using configurable branches
 		if i == len(allNodes)-1 {
-			newMarker = "└──" // last node
+			newMarker = t.config.Display.Branches.ConnectV // └──
 		} else {
-			newMarker = "├──" // middle node
+			newMarker = t.config.Display.Branches.ConnectH // ├──
 		}
 
-		// Determine the trunk character
-		trunkChar := "│  "
+		// Determine the trunk character using configurable branches
+		trunkChar := t.config.Display.Branches.Vertical + "  "
 		spaceChar := "   "
 
-		// Make trunk bold if this node is on the focused path and the child is too
+		// Make trunk bold and apply focus_branches formatting if on focused path
 		childOnFocusedPath := focusedPath[n.ID]
 		if isOnFocusedPath && childOnFocusedPath {
-			trunkChar = t.au.Bold("│").String() + "  "
+			formattedVertical := t.config.Formatting.FocusBranches.ApplyFormat(t.config.Display.Branches.Vertical, t.au)
+			trunkChar = formattedVertical + "  "
 		}
 
 		// i am currently a middle node
-		if marker == "├──" {
+		if marker == t.config.Display.Branches.ConnectH {
 			// so my children should display my trunk
 			newPrefix = newPrefix + trunkChar
 		} else {
