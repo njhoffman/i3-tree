@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/eh-am/i3-tree/pkg/config"
 	"github.com/logrusorgru/aurora"
 	"go.i3wm.org/i3/v4"
 )
@@ -16,26 +17,36 @@ type MonochromaticConsole struct {
 }
 
 type console struct {
-	w  io.Writer
-	au aurora.Aurora
+	w      io.Writer
+	au     aurora.Aurora
+	config *config.Config
 }
 
 func NewColoredConsole(w io.Writer) ColoredConsole {
+	return NewColoredConsoleWithConfig(w, config.DefaultConfig())
+}
+
+func NewColoredConsoleWithConfig(w io.Writer, cfg *config.Config) ColoredConsole {
 	return ColoredConsole{
-		newConsole(w, true),
+		newConsole(w, true, cfg),
 	}
 }
 
 func NewMonochromaticConsole(w io.Writer) MonochromaticConsole {
+	return NewMonochromaticConsoleWithConfig(w, config.DefaultConfig())
+}
+
+func NewMonochromaticConsoleWithConfig(w io.Writer, cfg *config.Config) MonochromaticConsole {
 	return MonochromaticConsole{
-		newConsole(w, false),
+		newConsole(w, false, cfg),
 	}
 }
 
-func newConsole(w io.Writer, colors bool) *console {
+func newConsole(w io.Writer, colors bool, cfg *config.Config) *console {
 	return &console{
-		w:  w,
-		au: aurora.NewAurora(colors),
+		w:      w,
+		au:     aurora.NewAurora(colors),
+		config: cfg,
 	}
 }
 
@@ -97,12 +108,12 @@ func (t *console) formatWindowDetails(node *i3.Node, isFloating bool) string {
 	var result string
 
 	// Add window class if available (only for con type)
-	if node.Type == "con" && node.WindowProperties.Class != "" {
+	if t.config.Display.ShowWindowClass && node.Type == "con" && node.WindowProperties.Class != "" {
 		result += fmt.Sprintf(" (%s)", node.WindowProperties.Class)
 	}
 
 	// Add window title
-	if node.Name != "" {
+	if t.config.Display.ShowWindowTitles && node.Name != "" {
 		// Truncate title if too long (> 80 chars)
 		title := node.Name
 		maxLen := 80
@@ -112,8 +123,8 @@ func (t *console) formatWindowDetails(node *i3.Node, isFloating bool) string {
 		result += " " + title
 	}
 
-	// Add marks in red brackets
-	if len(node.Marks) > 0 {
+	// Add marks in configured color brackets
+	if t.config.Display.ShowMarks && len(node.Marks) > 0 {
 		marksStr := ""
 		for i, mark := range node.Marks {
 			if i > 0 {
@@ -121,20 +132,27 @@ func (t *console) formatWindowDetails(node *i3.Node, isFloating bool) string {
 			}
 			marksStr += mark
 		}
-		result += " " + t.au.Red(fmt.Sprintf("[%s]", marksStr)).String()
+		formattedMarks := t.config.Formatting.Marks.ApplyFormat(fmt.Sprintf("[%s]", marksStr), t.au)
+		result += " " + formattedMarks
 	}
 
-	// Add status icons
+	// Add status icons if enabled
+	if !t.config.Display.ShowIcons {
+		return result
+	}
+
 	icons := ""
 
 	// Fullscreen icon
-	if node.FullscreenMode != 0 {
-		icons += " " + t.au.Bold(t.au.BrightWhite("󰊓")).String()
+	if t.config.Icons.Fullscreen.Enabled && node.FullscreenMode != 0 {
+		icon := t.config.Icons.Fullscreen.ApplyFormat(t.config.Icons.Fullscreen.Icon, t.au)
+		icons += " " + icon
 	}
 
 	// Floating icon
-	if isFloating || node.Type == "floating_con" {
-		icons += " " + t.au.Bold(t.au.BrightWhite("󰭽")).String()
+	if t.config.Icons.Floating.Enabled && (isFloating || node.Type == "floating_con") {
+		icon := t.config.Icons.Floating.ApplyFormat(t.config.Icons.Floating.Icon, t.au)
+		icons += " " + icon
 	}
 
 	// Sticky icon - Note: i3 doesn't expose sticky directly in the tree
@@ -146,13 +164,15 @@ func (t *console) formatWindowDetails(node *i3.Node, isFloating bool) string {
 			break
 		}
 	}
-	if isSticky {
-		icons += " " + t.au.Bold(t.au.BrightWhite("󱍭")).String()
+	if t.config.Icons.Sticky.Enabled && isSticky {
+		icon := t.config.Icons.Sticky.ApplyFormat(t.config.Icons.Sticky.Icon, t.au)
+		icons += " " + icon
 	}
 
 	// Urgent icon
-	if node.Urgent {
-		icons += " " + t.au.Bold(t.au.BrightWhite("")).String()
+	if t.config.Icons.Urgent.Enabled && node.Urgent {
+		icon := t.config.Icons.Urgent.ApplyFormat(t.config.Icons.Urgent.Icon, t.au)
+		icons += " " + icon
 	}
 
 	result += icons

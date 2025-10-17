@@ -3,6 +3,7 @@ package render
 import (
 	"fmt"
 
+	"github.com/eh-am/i3-tree/pkg/config"
 	"github.com/logrusorgru/aurora"
 	"go.i3wm.org/i3/v4"
 )
@@ -24,18 +25,26 @@ func (t *console) formatLayout(node *i3.Node, au aurora.Aurora, isFocused bool) 
 
 	formatFn := func(layout i3.Layout, au aurora.Aurora) string {
 		s := string(layout)
+
+		// Use config formatting for layouts
+		var nodeFormat *config.NodeFormat
 		switch layout {
 		case "stacked":
-			return au.BrightGreen(s).String()
+			nodeFormat = &t.config.Formatting.Stacked
 		case "tabbed":
-			return au.Green(s).String()
+			nodeFormat = &t.config.Formatting.Tabbed
 		case "splith":
-			return au.BrightYellow(s).String()
+			nodeFormat = &t.config.Formatting.SplitH
 		case "splitv":
-			return au.Yellow(s).String()
+			nodeFormat = &t.config.Formatting.SplitV
 		default:
 			return s
 		}
+
+		if nodeFormat != nil {
+			return nodeFormat.ApplyFormat(s, au)
+		}
+		return s
 	}
 
 	s := ""
@@ -62,41 +71,35 @@ func (t *console) formatType(node *i3.Node, au aurora.Aurora, isFocused bool, is
 			s = "fcon"
 		}
 
-		var colored string
+		// Use config formatting for node types
+		var nodeFormat *config.NodeFormat
 		switch nodeType {
 		case "workspace":
-			colored = au.Cyan(s).String()
+			nodeFormat = &t.config.Formatting.Workspace
 		case "con":
-			colored = au.Blue(s).String()
+			nodeFormat = &t.config.Formatting.Con
 		case "floating_con":
-			// floating_con should be colored like con (blue)
-			colored = au.Blue(s).String()
+			nodeFormat = &t.config.Formatting.FloatCon
 		case "output":
-			colored = au.Magenta(s).String()
+			nodeFormat = &t.config.Formatting.Output
+		case "root":
+			nodeFormat = &t.config.Formatting.Root
 		default:
-			colored = s
+			return s
 		}
 
-		// Make the type text bold if focused
-		if bold {
-			// We need to apply bold to the already colored text
-			// Aurora chaining: color first, then bold
-			switch nodeType {
-			case "workspace":
-				return au.Bold(au.Cyan(s)).String()
-			case "con":
-				return au.Bold(au.Blue(s)).String()
-			case "floating_con":
-				// floating_con should be colored and bolded like con (blue)
-				return au.Bold(au.Blue(s)).String()
-			case "output":
-				return au.Bold(au.Magenta(s)).String()
-			default:
-				return au.Bold(s).String()
+		if nodeFormat != nil {
+			// If focused, we need to apply bold to the formatting
+			if bold {
+				// Create a copy with bold attribute
+				boldFormat := *nodeFormat
+				boldFormat.Attributes.Bold = true
+				return boldFormat.ApplyFormat(s, au)
 			}
+			return nodeFormat.ApplyFormat(s, au)
 		}
 
-		return colored
+		return s
 	}
 
 	return t.wrapBrackets(formatFn(node.Type, au, isFocused, isFloating), isFocused)

@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2025-10-16
+
+### Added
+- Configuration file support with JSON format
+- Auto-creation of default config file at `~/.config/i3-tree/i3-tree.json`
+- Configurable colors for all node types and layouts (using 0-255 ANSI color codes)
+- Configurable text attributes (bold, italic, underline, dim)
+- Configurable status icons (fullscreen, floating, sticky, urgent) with customizable colors
+- Display options to toggle window titles, marks, window class, and icons
+- Default output type configuration ("focused", "all", or "raw")
+
 ## [0.6.0] - 2025-10-16
 
 ### Added
