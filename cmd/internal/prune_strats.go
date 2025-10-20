@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"github.com/eh-am/i3-tree/pkg/i3treeviewer"
-	"github.com/eh-am/i3-tree/pkg/prune"
+	"github.com/njhoffman/i3-tree/pkg/i3treeviewer"
+	"github.com/njhoffman/i3-tree/pkg/prune"
 )
 
 // NewPruner decides which prune strategy to use

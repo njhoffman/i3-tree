@@ -1,7 +1,7 @@
 package fetch_test
 
 import (
-	"github.com/eh-am/i3-tree/pkg/fetch"
+	"github.com/njhoffman/i3-tree/pkg/fetch"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

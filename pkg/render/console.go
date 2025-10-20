@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/eh-am/i3-tree/pkg/config"
+	"github.com/njhoffman/i3-tree/pkg/config"
 	"github.com/logrusorgru/aurora"
 	"go.i3wm.org/i3/v4"
 )

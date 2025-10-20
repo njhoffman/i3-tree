@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/eh-am/i3-tree/cmd"
+	"github.com/njhoffman/i3-tree/cmd"
 )
 
 func main() {

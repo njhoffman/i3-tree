@@ -3,9 +3,9 @@ package internal
 import (
 	"os"
 
-	"github.com/eh-am/i3-tree/pkg/config"
-	"github.com/eh-am/i3-tree/pkg/i3treeviewer"
-	"github.com/eh-am/i3-tree/pkg/render"
+	"github.com/njhoffman/i3-tree/pkg/config"
+	"github.com/njhoffman/i3-tree/pkg/i3treeviewer"
+	"github.com/njhoffman/i3-tree/pkg/render"
 )
 
 type RendererStrat string

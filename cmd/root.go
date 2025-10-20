@@ -9,8 +9,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/eh-am/i3-tree/cmd/internal"
-	"github.com/eh-am/i3-tree/pkg/i3treeviewer"
+	"github.com/njhoffman/i3-tree/cmd/internal"
+	"github.com/njhoffman/i3-tree/pkg/i3treeviewer"
 	"github.com/peterbourgon/ff/v3/ffcli"
 )
 

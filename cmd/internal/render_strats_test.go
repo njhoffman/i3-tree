@@ -3,9 +3,9 @@ package internal_test
 import (
 	"testing"
 
-	"github.com/eh-am/i3-tree/cmd/internal"
-	"github.com/eh-am/i3-tree/pkg/i3treeviewer"
-	"github.com/eh-am/i3-tree/pkg/render"
+	"github.com/njhoffman/i3-tree/cmd/internal"
+	"github.com/njhoffman/i3-tree/pkg/i3treeviewer"
+	"github.com/njhoffman/i3-tree/pkg/render"
 	"github.com/stretchr/testify/assert"
 )
 

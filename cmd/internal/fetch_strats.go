@@ -1,8 +1,8 @@
 package internal
 
 import (
-	"github.com/eh-am/i3-tree/pkg/fetch"
-	"github.com/eh-am/i3-tree/pkg/i3treeviewer"
+	"github.com/njhoffman/i3-tree/pkg/fetch"
+	"github.com/njhoffman/i3-tree/pkg/i3treeviewer"
 )
 
 // Fetch Strategies

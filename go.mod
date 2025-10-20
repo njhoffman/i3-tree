@@ -4,7 +4,7 @@ go 1.15
 
 require (
 	github.com/cirocosta/asciinema-edit v0.0.0-20190130154215-1c0971ae232a // indirect
-	github.com/eh-am/i3-tree-viewer v0.0.0-20210502210023-a8aa829baafa // indirect
+	github.com/njhoffman/i3-tree-viewer v0.0.0-20210502210023-a8aa829baafa // indirect
 	github.com/google/go-cmp v0.5.5 // indirect
 	github.com/jandedobbeleer/oh-my-posh v26.17.3+incompatible // indirect
 	github.com/kr/pretty v0.1.0 // indirect
