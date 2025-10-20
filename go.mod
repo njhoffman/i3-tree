@@ -1,4 +1,4 @@
-module github.com/eh-am/i3-tree
+module github.com/njhoffman/i3-tree
 
 go 1.15
 
